@@ -8,34 +8,21 @@
 #
 # For inquiries contact  george.drettakis@inria.fr
 #
+# This Python script is based on the shell converter script provided in the MipNerF 360 repository.
+#
 
 import os
+import sys
 import logging
 from argparse import ArgumentParser
 import shutil
-
-# This Python script is based on the shell converter script provided in the MipNerF 360 repository.
 
 
 def run_command(command, error_message):
     exit_code = os.system(command)
     if exit_code != 0:
         logging.error("%s with code %d. Exiting.", error_message, exit_code)
-        exit(exit_code)
-
-
-def resize_images(source_path, magick_command):
-    sizes = [("images_2", 50), ("images_4", 25), ("images_8", 12.5)]
-    for folder, size in sizes:
-        os.makedirs(f"{source_path}/{folder}", exist_ok=True)
-        for file in os.listdir(f"{source_path}/images"):
-            source_file = os.path.join(source_path, "images", file)
-            destination_file = os.path.join(source_path, folder, file)
-            shutil.copy2(source_file, destination_file)
-            run_command(
-                f"{magick_command} mogrify -resize {size}% {destination_file}",
-                f"{size}% resize failed",
-            )
+        sys.exit(exit_code)
 
 
 def main():
@@ -44,17 +31,10 @@ def main():
     parser.add_argument("--skip_matching", action="store_true")
     parser.add_argument("--source_path", "-s", required=True, type=str)
     parser.add_argument("--camera", default="OPENCV", type=str)
-    parser.add_argument("--colmap_executable", default="", type=str)
-    parser.add_argument("--resize", action="store_true")
-    parser.add_argument("--magick_executable", default="", type=str)
     args = parser.parse_args()
 
-    colmap_command = (
-        f'"{args.colmap_executable}"' if args.colmap_executable else "colmap"
-    )
-    magick_command = (
-        f'"{args.magick_executable}"' if args.magick_executable else "magick"
-    )
+    colmap_command = "colmap"
+
     use_gpu = 1 if not args.no_gpu else 0
 
     if not args.skip_matching:
@@ -94,10 +74,6 @@ def main():
                 os.path.join(args.source_path, "sparse", file),
                 os.path.join(args.source_path, "sparse", "0", file),
             )
-
-    if args.resize:
-        print("Copying and resizing...")
-        resize_images(args.source_path, magick_command)
 
     print("Done.")
 
